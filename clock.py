@@ -1,7 +1,3 @@
-""" 
-tip: можно завернуть .py в .exe (или даже .apk) и отправить другу :)
-"""
-
 from datetime import datetime
 import sys
 import copy
@@ -17,9 +13,10 @@ def print_at(y, x, s):
     windll.kernel32.SetConsoleCursorPosition(h, COORD(x, y))
     x = s.encode("windows-1252")
     windll.kernel32.WriteConsoleA(h, c_char_p(x), len(x), None, None)
+    sys.stdout.flush()
 
 STOPWATCH_COORD_Y = 10
-STOPWATCH_END_COORD_X = 17
+STOPWATCH_END_COORD_X = 14
 
 class Clock:
     LINES_COUNT = 9
@@ -109,11 +106,10 @@ class Clock:
     def __draw(self, spt: list, print_mode = False):
         if not print_mode:
             for i in range(self.LINES_COUNT):
-                print_at(i, 0, spt[i])
+                print_at(i+2, 0, spt[i])
         else:
             for i in range(self.LINES_COUNT):
-                print(spt[i])
-        print_at(STOPWATCH_COORD_Y, STOPWATCH_END_COORD_X, '')
+                print_at(i+2, 0, spt[i])
 
 
     def draw_second(self, s, print_mode = False):
@@ -134,6 +130,8 @@ class Clock:
             if s == 55: return self.vreflect(5)
             raise Exception('Unsupported second value')
 
+        now = datetime.now()
+        print_at(0,0, now.strftime('%H:%M:%S'))
 
         if s == 0 or s%5 == 0:
             clock = self.clear_clock_sprite.copy()
@@ -150,25 +148,16 @@ class Clock:
 
 
     def draw(self, t: datetime, print_mode = False):
-        self.draw_second(t.second, print_mode=print_mode)
+        self.draw_second(round(t.second), print_mode=print_mode)
 
 
 
 def now(): return datetime.now()
 
-
-def upline(): 
-    sys.stdout.write("\x1b[1A")
-    sys.stdout.flush()
-
 # clear line
 def cll(): 
     sys.stdout.write("\x1b[2K")
     sys.stdout.flush()
-
-def upncll(): 
-    upline()
-    cll()
 
 def printnow(s, end_='\n'): print(s, flush=True, end=end_)
 
@@ -178,7 +167,7 @@ def clock_loop():
     while True:
         try:
             clock.draw(datetime.now())
-            time.sleep(0.3)
+            time.sleep(1)
         except KeyboardInterrupt:
             break
 
@@ -187,26 +176,22 @@ def stopwatch_loop(y, x):
     while True:
         try:
             t = datetime.now()
-            print_at(y, x, t.strftime('%H:%M:%S,') + f'{t.microsecond//10_000:02d}')
-            # sys.stdout.flush()
-            time.sleep(0.05)
+            print_at(y,x,'')
+            cll()
+            print_at(y, x, t.strftime('%H:%M:%S'))
+            time.sleep(0.3)
         except KeyboardInterrupt:
             break
 
 
 
-
 if __name__ == "__main__":
     clockloop = Process(target=clock_loop)
-    swloop = Process(target=stopwatch_loop, args=(10,6))
-    try:
+    try:    
         clockloop.start()
-        swloop.start()
         clockloop.join()
-        swloop.join()
     except KeyboardInterrupt:
         clockloop.close()
-        swloop.close()
     
 
 
